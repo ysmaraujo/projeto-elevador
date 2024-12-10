@@ -42,6 +42,21 @@
   criarPavimentos()
 // -------------- Elevador
 
+function iniciarMovimentacao() {
+  const elevador = document.querySelector('.elevador')
+  elevador.setAttribute('em-movimentacao', '')
+}
+
+function finalizarMovimentacao() {
+  const elevador = document.querySelector('.elevador')
+  elevador.removeAttribute('em-movimentacao', '')
+}
+
+function emMovimentacao() {
+  const elevador = document.querySelector('.elevador')
+  return elevador.hasAttribute('em-movimentacao', '')
+}
+
 function obterTamanhoElevador() {
   const terreo = document.querySelector('[andar="t"]')
    return terreo.offsetHeight
@@ -62,14 +77,61 @@ function obterPosicaoAtual() {
   return +elevador.style.bottom.replace('px', '')
 }
 
+function atualizarMostrador(texto) {
+  const mostrador = document.querySelector('.mostrador')
+  mostrador.innerHTML = texto
+}
+
+function iniciarComando(destino) {
+  const botao = document.querySelector(`[destino="${destino}"]`)
+  botao.classList.add('destaque')
+}
+
+function finalizarComando(destino) {
+  const botao = document.querySelector(`[destino="${destino}"]`)
+  botao.classList.remove('destaque')
+}
+
 function moverElevadorPara(andar) {
+  if(emMovimentacao()) return
+
+  iniciarMovimentacao()
+  iniciarComando(andar)
+
   const numero = andar === 't' ? 0 : +andar
   const elevador = document.querySelector('.elevador')
 
-  elevador.style.bottom = obterPosicaoAtual() + (numero * obterTamanhoElevador())
+ const posicaoInicial = obterPosicaoAtual()
+ const posicaoFinal = numero * obterTamanhoElevador()
+ const subindo = posicaoFinal > posicaoInicial
+
+  atualizarMostrador(subindo ? 'Subindo' : 'Descendo')
+
+  let temporizador = setInterval(() => {
+    const novaPosicao = obterPosicaoAtual() + (subindo ? 10 : -10)
+    const terminou = subindo ? novaPosicao >= posicaoFinal : novaPosicao <= posicaoFinal
+    elevador.style.bottom = terminou ? posicaoFinal : novaPosicao
+    
+    if(terminou) {
+      clearInterval(temporizador)
+      atualizarMostrador(andar === 't' ? 'Térreo' : `${andar} Andar`)
+      finalizarMovimentacao()
+      finalizarComando(andar)
+    }
+  }, 30)
+  
+}
+
+function aplicarControlesDoElevador() {
+  const botoes = document.querySelectorAll('[destino]')
+  botoes.forEach(botao => {
+    const destino = botao.getAttribute('destino')
+    botao.onclick = function () {
+      moverElevadorPara(destino)
+    }
+  })
 }
 
 criarElevador()
-moverElevadorPara("t")
-
+aplicarControlesDoElevador()
 })()
